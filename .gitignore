@@ -5,6 +5,8 @@ __pycache__/
 .env
 venv/
 .venv/
+.env.local
+.env.*.local
 
 # DVC
 # Игнорируем данные внутри папок
@@ -34,3 +36,10 @@ build/
 # IDE
 .idea/
 .vscode/
+
+# Logs
+*.log
+logs/
+
+# Reports
+reports/*.html

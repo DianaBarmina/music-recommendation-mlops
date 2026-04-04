@@ -1,0 +1,8 @@
+als:
+  factors: 64
+  iterations: 30
+  regularization: 0.02
+  alpha: 10
+  random_state: 42
+  use_gpu: false
+  num_threads: 4
