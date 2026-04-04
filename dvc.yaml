@@ -1,0 +1,64 @@
+stages:
+  prepare:
+    cmd: python src/data/make_dataset.py
+    deps:
+      - src/data/make_dataset.py
+      - data/raw/february/
+      - params.yaml
+    outs:
+      - data/interim/
+    params:
+      - data.raw_february_path
+
+  featurize:
+    cmd: python src/data/build_features.py
+    deps:
+      - src/data/build_features.py
+      - data/interim/
+      - params.yaml
+    outs:
+      - data/processed/train_matrix.npz
+      - data/processed/user_mapping.parquet
+      - data/processed/item_mapping.parquet
+      - data/processed/reference/reference_dataset.parquet
+    params:
+      - data.train_matrix_path
+      - data.user_mapping_path
+      - data.item_mapping_path
+      - data.reference_path
+      - configs/data_config.yaml:
+          - columns
+          - preprocessing
+
+  train:
+    cmd: python src/models/train_model.py
+    deps:
+      - src/models/train_model.py
+      - data/processed/train_matrix.npz
+      - data/processed/user_mapping.parquet
+      - data/processed/item_mapping.parquet
+      - params.yaml
+    outs:
+      - models/als_model.pkl
+    params:
+      - model.factors
+      - model.iterations
+      - model.regularization
+      - model.alpha
+      - model.random_state
+
+  evaluate:
+    cmd: python src/models/evaluate_model.py
+    deps:
+      - src/models/evaluate_model.py
+      - models/als_model.pkl
+      - data/processed/train_matrix.npz
+      - data/processed/user_mapping.parquet
+      - data/processed/item_mapping.parquet
+      - params.yaml
+    metrics:
+      - metrics.json:
+          cache: false
+    params:
+      - metrics.k
+      - metrics.test_size

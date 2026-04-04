@@ -1,0 +1,13 @@
+columns:
+  user_id: user_id
+  item_id: song_id
+  timestamp: ts
+
+preprocessing:
+  min_user_interactions: 10
+  min_item_interactions: 5
+
+split:
+  test_size: 0.2
+  random_state: 42
+  strategy: temporal

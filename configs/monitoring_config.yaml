@@ -1,0 +1,11 @@
+drift:
+  threshold: 0.3
+  check_every_n_predictions: 100
+
+prometheus:
+  port: 8001
+
+alerts:
+  data_drift: true
+  concept_drift: true
+  target_drift: true

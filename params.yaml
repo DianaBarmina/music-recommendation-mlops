@@ -1,0 +1,31 @@
+data:
+  raw_february_path: data/raw/february/interactions_february.parquet
+  raw_january_path: data/raw/january/interactions_january.parquet
+  raw_march_dir: data/raw/march/
+  train_matrix_path: data/processed/train_matrix.npz
+  user_mapping_path: data/processed/user_mapping.parquet
+  item_mapping_path: data/processed/item_mapping.parquet
+  reference_path: data/processed/reference/reference_dataset.parquet
+  predictions_log_path: data/predictions/predictions_log.parquet
+
+model:
+  factors: 64
+  iterations: 30
+  regularization: 0.02
+  alpha: 10
+  random_state: 42
+  model_path: models/als_model.pkl
+
+metrics:
+  k: 10
+  test_size: 0.2
+
+mlflow:
+  experiment_name: music-als-recommender
+  model_name: music-als-recommender
+  tracking_uri: http://localhost:5000
+
+monitoring:
+  drift_threshold: 0.3
+  reference_path: data/processed/reference/reference_dataset.parquet
+  reports_dir: reports/

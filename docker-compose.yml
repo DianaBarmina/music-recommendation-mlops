@@ -1,0 +1,140 @@
+version: "3.9"
+
+networks:
+  mlops-network:
+    driver: bridge
+
+volumes:
+  mlflow-data:
+  postgres-data:
+  prometheus-data:
+  grafana-data:
+  model-data:
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: mlops-postgres
+    networks:
+      - mlops-network
+    environment:
+      POSTGRES_USER: mlops
+      POSTGRES_PASSWORD: mlops_password
+      POSTGRES_DB: mlops_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mlops"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mlflow:
+    image: python:3.12-slim
+    container_name: mlops-mlflow
+    networks:
+      - mlops-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MLFLOW_BACKEND_STORE_URI: postgresql://mlops:mlops_password@postgres:5432/mlops_db
+      MLFLOW_DEFAULT_ARTIFACT_ROOT: /mlflow/artifacts
+    volumes:
+      - mlflow-data:/mlflow/artifacts
+    ports:
+      - "5000:5000"
+    command: >
+      bash -c "pip install mlflow psycopg2-binary &&
+               mlflow server
+               --backend-store-uri postgresql://mlops:mlops_password@postgres:5432/mlops_db
+               --default-artifact-root /mlflow/artifacts
+               --host 0.0.0.0
+               --port 5000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    container_name: mlops-api
+    networks:
+      - mlops-network
+    depends_on:
+      mlflow:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      DATABASE_URL: postgresql://mlops:mlops_password@postgres:5432/mlops_db
+      MODEL_NAME: music-als-recommender
+      MODEL_STAGE: Production
+    volumes:
+      - model-data:/app/models
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./params.yaml:/app/params.yaml
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  ui:
+    build:
+      context: .
+      dockerfile: services/ui/Dockerfile
+    container_name: mlops-ui
+    networks:
+      - mlops-network
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+
+  prometheus:
+    image: prom/prometheus:v3.3.1
+    container_name: mlops-prometheus
+    networks:
+      - mlops-network
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+
+  grafana:
+    image: grafana/grafana:12.0.0
+    container_name: mlops-grafana
+    networks:
+      - mlops-network
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin_password
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    ports:
+      - "3000:3000"
