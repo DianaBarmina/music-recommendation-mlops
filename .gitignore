@@ -7,10 +7,19 @@ venv/
 .venv/
 
 # DVC
-/data/raw/
-/data/processed/
-/data/interim/
-/models/
+# Игнорируем данные внутри папок
+data/raw/february/
+data/raw/march/
+data/interim/
+data/processed/
+data/predictions/
+models/*.pkl
+models/*.npz
+
+# НЕ игнорируем .dvc файлы и служебные файлы
+!data/**/*.dvc
+!data/**/.gitkeep
+!models/.gitkeep
 
 # MLflow
 mlruns/
