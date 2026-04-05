@@ -1,5 +1,8 @@
 import pickle
+import re
+from pathlib import Path
 
+import mlflow
 import numpy as np
 from scipy.sparse import csr_matrix, load_npz
 from tqdm import tqdm
@@ -7,6 +10,21 @@ from tqdm import tqdm
 from src.utils.helpers import get_logger, load_params, save_metrics
 
 logger = get_logger(__name__)
+
+_ALLOWED = re.compile(r"[^0-9a-zA-Z_\-./ ]+")
+
+
+def sanitize_mlflow_metric_name(name: str) -> str:
+    name = name.replace("@", "_at_")
+    name = _ALLOWED.sub("_", name)
+    return name
+
+
+def sanitize_metrics(metrics: dict) -> dict:
+    out = {}
+    for k, v in metrics.items():
+        out[sanitize_mlflow_metric_name(k)] = float(v)
+    return out
 
 
 def eval_at_k(
@@ -215,6 +233,27 @@ def main():
             all_metrics[f"random_test_{metric_name}"] = value
 
     save_metrics(all_metrics, "metrics.json")
+    mlflow.set_tracking_uri(params["mlflow"]["tracking_uri"])
+    mlflow.set_experiment(params["mlflow"]["experiment_name"])
+
+    sanitized_metrics = sanitize_metrics(all_metrics)
+
+    run_id_path = Path("models/mlflow_run_id.txt")
+
+    if run_id_path.exists():
+        run_id = run_id_path.read_text(encoding="utf-8").strip()
+        logger.info("Logging metrics to existing MLflow run_id=%s", run_id)
+
+        with mlflow.start_run(run_id=run_id):
+            mlflow.log_metrics(sanitized_metrics)
+            mlflow.log_artifact("metrics.json")
+    else:
+        logger.warning("No MLflow run_id found, logging metrics to a new run")
+
+        with mlflow.start_run():
+            mlflow.log_metrics(sanitized_metrics)
+            mlflow.log_artifact("metrics.json")
+
     logger.info("Metrics saved to metrics.json")
 
 

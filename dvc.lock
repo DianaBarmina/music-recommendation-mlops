@@ -15,12 +15,12 @@ stages:
       nfiles: 1
     - path: params.yaml
       hash: md5
-      md5: ba0d1d9748431b6b00dd12a3b8775437
-      size: 1079
+      md5: e807aea878fa7d7134a0e00f5c73ee80
+      size: 1081
     - path: src/data/make_dataset.py
       hash: md5
-      md5: 2c7bfd0a3b5e48aa6000b3e21bb7d6d6
-      size: 6701
+      md5: d0d497893ca3aeb4e883c6c5c7d45d84
+      size: 6669
     - path: src/utils/helpers.py
       hash: md5
       md5: bf8a0e2684870a49d12ac219cd55d060
@@ -28,23 +28,23 @@ stages:
     outs:
     - path: data/interim/clean_interactions.parquet
       hash: md5
-      md5: 36052d99b5ce7a5dba2bc96ef176f609
-      size: 433149
+      md5: 8d004c61a4464dbaf4421b1270f41339
+      size: 433143
   featurize:
     cmd: python -m src.data.build_features
     deps:
     - path: data/interim/clean_interactions.parquet
       hash: md5
-      md5: 36052d99b5ce7a5dba2bc96ef176f609
-      size: 433149
+      md5: 8d004c61a4464dbaf4421b1270f41339
+      size: 433143
     - path: params.yaml
       hash: md5
-      md5: ba0d1d9748431b6b00dd12a3b8775437
-      size: 1079
+      md5: e807aea878fa7d7134a0e00f5c73ee80
+      size: 1081
     - path: src/data/build_features.py
       hash: md5
-      md5: 9129ddc88e395045b4061061c20d99b8
-      size: 3919
+      md5: 6d763600fc0e59be61a762e7215da44f
+      size: 3885
     - path: src/utils/helpers.py
       hash: md5
       md5: bf8a0e2684870a49d12ac219cd55d060
@@ -56,8 +56,8 @@ stages:
       size: 161657
     - path: data/processed/reference/reference_dataset.parquet
       hash: md5
-      md5: 86448c7b32e2ef7259ca51eeb3e99e95
-      size: 333781
+      md5: 5ee35d781a8d86c00571a93b5d155e9a
+      size: 333768
     - path: data/processed/test_matrix.npz
       hash: md5
       md5: 629949fc2c4a22e8dc584272e30f67a9
@@ -75,7 +75,7 @@ stages:
       md5: 165471cc2eb8c55a77d77745b0c3d4cb
       size: 34166
   train:
-    cmd: python -m src.models.train_model
+    cmd: python -X utf8 -m src.models.train_model
     deps:
     - path: data/processed/train_matrix.npz
       hash: md5
@@ -83,12 +83,12 @@ stages:
       size: 148296
     - path: params.yaml
       hash: md5
-      md5: ba0d1d9748431b6b00dd12a3b8775437
-      size: 1079
+      md5: e807aea878fa7d7134a0e00f5c73ee80
+      size: 1081
     - path: src/models/train_model.py
       hash: md5
-      md5: f231483e4a27539a06eed44217e7f248
-      size: 1493
+      md5: 81917394261cddefc91121b251ee02c2
+      size: 2735
     - path: src/utils/helpers.py
       hash: md5
       md5: bf8a0e2684870a49d12ac219cd55d060
@@ -99,7 +99,7 @@ stages:
       md5: de4ff140ffdc15b9252e7cd873f09bb1
       size: 1946132
   evaluate:
-    cmd: python -m src.models.evaluate_model
+    cmd: python -X utf8 -m src.models.evaluate_model
     deps:
     - path: data/processed/items_map.parquet
       hash: md5
@@ -127,12 +127,12 @@ stages:
       size: 1946132
     - path: params.yaml
       hash: md5
-      md5: ba0d1d9748431b6b00dd12a3b8775437
-      size: 1079
+      md5: e807aea878fa7d7134a0e00f5c73ee80
+      size: 1081
     - path: src/models/evaluate_model.py
       hash: md5
-      md5: d2e428f99ff8dec3a4b2641a1d267635
-      size: 7807
+      md5: a592b9519e49a9835787ba91f620c47b
+      size: 9560
     - path: src/utils/helpers.py
       hash: md5
       md5: bf8a0e2684870a49d12ac219cd55d060
