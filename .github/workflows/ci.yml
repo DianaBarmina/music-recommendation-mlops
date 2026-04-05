@@ -43,7 +43,7 @@ jobs:
         run: isort src/ services/ tests/ --check-only
 
       - name: Run flake8
-        run: flake8 src/ services/ tests/
+        run: flake8 src/ services/ tests/ --max-line-length=88 --extend-ignore=E203,W503
 
   test:
     name: Tests
