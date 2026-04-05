@@ -1,0 +1,144 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python -m src.data.make_dataset
+    deps:
+    - path: data/raw/february/
+      hash: md5
+      md5: 000468c24d3fb396371bf5be3b573d30.dir
+      size: 6163203
+      nfiles: 1
+    - path: data/raw/january/
+      hash: md5
+      md5: 21ea8d4eefc8007bddea138845f5a28a.dir
+      size: 6377760
+      nfiles: 1
+    - path: params.yaml
+      hash: md5
+      md5: ba0d1d9748431b6b00dd12a3b8775437
+      size: 1079
+    - path: src/data/make_dataset.py
+      hash: md5
+      md5: 2c7bfd0a3b5e48aa6000b3e21bb7d6d6
+      size: 6701
+    - path: src/utils/helpers.py
+      hash: md5
+      md5: bf8a0e2684870a49d12ac219cd55d060
+      size: 683
+    outs:
+    - path: data/interim/clean_interactions.parquet
+      hash: md5
+      md5: 36052d99b5ce7a5dba2bc96ef176f609
+      size: 433149
+  featurize:
+    cmd: python -m src.data.build_features
+    deps:
+    - path: data/interim/clean_interactions.parquet
+      hash: md5
+      md5: 36052d99b5ce7a5dba2bc96ef176f609
+      size: 433149
+    - path: params.yaml
+      hash: md5
+      md5: ba0d1d9748431b6b00dd12a3b8775437
+      size: 1079
+    - path: src/data/build_features.py
+      hash: md5
+      md5: 9129ddc88e395045b4061061c20d99b8
+      size: 3919
+    - path: src/utils/helpers.py
+      hash: md5
+      md5: bf8a0e2684870a49d12ac219cd55d060
+      size: 683
+    outs:
+    - path: data/processed/items_map.parquet
+      hash: md5
+      md5: 0b14cb08b3b6a38343ba7c89aa7be6f8
+      size: 161657
+    - path: data/processed/reference/reference_dataset.parquet
+      hash: md5
+      md5: 86448c7b32e2ef7259ca51eeb3e99e95
+      size: 333781
+    - path: data/processed/test_matrix.npz
+      hash: md5
+      md5: 629949fc2c4a22e8dc584272e30f67a9
+      size: 34670
+    - path: data/processed/train_matrix.npz
+      hash: md5
+      md5: 3af032bd5d9651e62d3844e79510fda6
+      size: 148296
+    - path: data/processed/users_map.parquet
+      hash: md5
+      md5: 2aa4927bc3f16d82860c1ac34d3ae2a8
+      size: 3114
+    - path: data/processed/val_matrix.npz
+      hash: md5
+      md5: 165471cc2eb8c55a77d77745b0c3d4cb
+      size: 34166
+  train:
+    cmd: python -m src.models.train_model
+    deps:
+    - path: data/processed/train_matrix.npz
+      hash: md5
+      md5: 3af032bd5d9651e62d3844e79510fda6
+      size: 148296
+    - path: params.yaml
+      hash: md5
+      md5: ba0d1d9748431b6b00dd12a3b8775437
+      size: 1079
+    - path: src/models/train_model.py
+      hash: md5
+      md5: f231483e4a27539a06eed44217e7f248
+      size: 1493
+    - path: src/utils/helpers.py
+      hash: md5
+      md5: bf8a0e2684870a49d12ac219cd55d060
+      size: 683
+    outs:
+    - path: models/als_model.pkl
+      hash: md5
+      md5: de4ff140ffdc15b9252e7cd873f09bb1
+      size: 1946132
+  evaluate:
+    cmd: python -m src.models.evaluate_model
+    deps:
+    - path: data/processed/items_map.parquet
+      hash: md5
+      md5: 0b14cb08b3b6a38343ba7c89aa7be6f8
+      size: 161657
+    - path: data/processed/test_matrix.npz
+      hash: md5
+      md5: 629949fc2c4a22e8dc584272e30f67a9
+      size: 34670
+    - path: data/processed/train_matrix.npz
+      hash: md5
+      md5: 3af032bd5d9651e62d3844e79510fda6
+      size: 148296
+    - path: data/processed/users_map.parquet
+      hash: md5
+      md5: 2aa4927bc3f16d82860c1ac34d3ae2a8
+      size: 3114
+    - path: data/processed/val_matrix.npz
+      hash: md5
+      md5: 165471cc2eb8c55a77d77745b0c3d4cb
+      size: 34166
+    - path: models/als_model.pkl
+      hash: md5
+      md5: de4ff140ffdc15b9252e7cd873f09bb1
+      size: 1946132
+    - path: params.yaml
+      hash: md5
+      md5: ba0d1d9748431b6b00dd12a3b8775437
+      size: 1079
+    - path: src/models/evaluate_model.py
+      hash: md5
+      md5: d2e428f99ff8dec3a4b2641a1d267635
+      size: 7807
+    - path: src/utils/helpers.py
+      hash: md5
+      md5: bf8a0e2684870a49d12ac219cd55d060
+      size: 683
+    outs:
+    - path: metrics.json
+      hash: md5
+      md5: cd9cf7b46800e58788dbaf4bb5e48941
+      size: 4689

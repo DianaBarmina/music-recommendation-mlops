@@ -8,6 +8,6 @@ preprocessing:
   min_item_interactions: 5
 
 split:
-  test_size: 0.2
-  random_state: 42
-  strategy: temporal
+  test_window_days: 14
+  gap_days: 0
+  strategy: temporal_window
