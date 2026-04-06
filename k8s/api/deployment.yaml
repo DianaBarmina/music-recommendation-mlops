@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: music-api
-          image: diashabarmina/music-recommendation-api:2984915
+          image: diashabarmina/music-recommendation-api:f31045d
           ports:
             - containerPort: 8000
           env:
