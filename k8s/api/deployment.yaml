@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: music-api
-          image: your-dockerhub-username/music-recommendation-api:latest
+          image: diashabarmina/music-recommendation-api:6c1d67b
           ports:
             - containerPort: 8000
           env:
