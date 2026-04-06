@@ -31,7 +31,7 @@ metrics:
 mlflow:
   experiment_name: music-als-recommender
   model_name: music-als-recommender
-  tracking_uri: http://localhost:5000
+  tracking_uri: http://127.0.0.1:5000
 
 monitoring:
   drift_threshold: 0.3
