@@ -8,6 +8,10 @@ DATABASE_URL = os.getenv(
     "postgresql://mlops:mlops_password@localhost:5432/mlops_db",
 )
 
+connect_args = {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
