@@ -45,3 +45,6 @@ logs/
 reports/*.html
 
 models/mlflow_run_id.txt
+.coverage
+mlartifacts/
+mlflow.db
