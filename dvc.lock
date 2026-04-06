@@ -87,8 +87,8 @@ stages:
       size: 1081
     - path: src/models/train_model.py
       hash: md5
-      md5: 81917394261cddefc91121b251ee02c2
-      size: 2735
+      md5: 55b9e865e61798e8b5b700f4eb79a036
+      size: 2847
     - path: src/utils/helpers.py
       hash: md5
       md5: bf8a0e2684870a49d12ac219cd55d060
@@ -131,8 +131,8 @@ stages:
       size: 1081
     - path: src/models/evaluate_model.py
       hash: md5
-      md5: a592b9519e49a9835787ba91f620c47b
-      size: 9560
+      md5: ce732b0adeebda7a1967d095e0d7145b
+      size: 5892
     - path: src/utils/helpers.py
       hash: md5
       md5: bf8a0e2684870a49d12ac219cd55d060
@@ -140,5 +140,5 @@ stages:
     outs:
     - path: metrics.json
       hash: md5
-      md5: cd9cf7b46800e58788dbaf4bb5e48941
-      size: 4689
+      md5: b8eab168fa29fed183f0ba985b4cba3d
+      size: 4697

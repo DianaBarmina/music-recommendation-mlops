@@ -1,12 +1,14 @@
 import pickle
 import re
+import sys
 from pathlib import Path
+from typing import Any
 
 import mlflow
 import numpy as np
 from scipy.sparse import csr_matrix, load_npz
-from tqdm import tqdm
 
+from src.models.metrics import eval_at_k, eval_from_recs
 from src.utils.helpers import get_logger, load_params, save_metrics
 
 logger = get_logger(__name__)
@@ -20,134 +22,8 @@ def sanitize_mlflow_metric_name(name: str) -> str:
     return name
 
 
-def sanitize_metrics(metrics: dict) -> dict:
-    out = {}
-    for k, v in metrics.items():
-        out[sanitize_mlflow_metric_name(k)] = float(v)
-    return out
-
-
-def eval_at_k(
-    model,
-    train_user_items: csr_matrix,
-    heldout_user_items: csr_matrix,
-    k: int,
-) -> dict:
-    n_users = train_user_items.shape[0]
-    precisions, recalls, maps, ndcgs, hits_list = [], [], [], [], []
-
-    for u in tqdm(range(n_users), desc=f"Eval@{k}", unit="user"):
-        true_items = heldout_user_items[u].indices
-        if true_items.size == 0:
-            continue
-
-        recs, _scores = model.recommend(
-            userid=u,
-            user_items=train_user_items[u],
-            N=k,
-            filter_already_liked_items=True,
-            recalculate_user=True,
-        )
-        recs = np.asarray(recs, dtype=np.int64)
-        hits = np.isin(recs, true_items)
-
-        precisions.append(hits.mean())
-        recalls.append(hits.sum() / true_items.size)
-        hits_list.append(float(hits.any()))
-
-        if hits.any():
-            hit_idx = np.flatnonzero(hits)
-            prec_at_i = np.cumsum(hits)[hit_idx] / (hit_idx + 1)
-            maps.append(prec_at_i.mean())
-        else:
-            maps.append(0.0)
-
-        denom = np.log2(np.arange(2, k + 2))
-        dcg = (hits / denom).sum()
-        m = min(true_items.size, k)
-        idcg = (1.0 / denom[:m]).sum()
-        ndcgs.append(dcg / idcg if idcg > 0 else 0.0)
-
-    # MRR
-    mrr_list = []
-    for u in range(n_users):
-        true_items = heldout_user_items[u].indices
-        if true_items.size == 0:
-            continue
-        recs, _ = model.recommend(
-            userid=u,
-            user_items=train_user_items[u],
-            N=k,
-            filter_already_liked_items=True,
-            recalculate_user=True,
-        )
-        recs = np.asarray(recs, dtype=np.int64)
-        hits = np.isin(recs, true_items)
-        if hits.any():
-            first_hit = np.argmax(hits) + 1
-            mrr_list.append(1.0 / first_hit)
-        else:
-            mrr_list.append(0.0)
-
-    n = len(precisions)
-    return {
-        f"precision@{k}": float(np.mean(precisions)) if n else 0.0,
-        f"recall@{k}": float(np.mean(recalls)) if n else 0.0,
-        f"map@{k}": float(np.mean(maps)) if n else 0.0,
-        f"ndcg@{k}": float(np.mean(ndcgs)) if n else 0.0,
-        f"hit_rate@{k}": float(np.mean(hits_list)) if n else 0.0,
-        f"mrr@{k}": float(np.mean(mrr_list)) if mrr_list else 0.0,
-        "n_eval_users": n,
-    }
-
-
-def eval_from_recs(
-    heldout_user_items: csr_matrix,
-    recs_by_user: list,
-    k: int,
-    name: str = "",
-) -> dict:
-    precisions, recalls, maps, ndcgs, hits_list, mrr_list = [], [], [], [], [], []
-    n_users = heldout_user_items.shape[0]
-
-    for u in tqdm(range(n_users), desc=f"Eval {name}@{k}", unit="user"):
-        true_items = heldout_user_items[u].indices
-        if true_items.size == 0:
-            continue
-
-        recs = np.asarray(recs_by_user[u][:k], dtype=np.int64)
-        hits = np.isin(recs, true_items)
-
-        precisions.append(hits.mean())
-        recalls.append(hits.sum() / true_items.size)
-        hits_list.append(float(hits.any()))
-
-        if hits.any():
-            hit_idx = np.flatnonzero(hits)
-            prec_at_i = np.cumsum(hits)[hit_idx] / (hit_idx + 1)
-            maps.append(prec_at_i.mean())
-            first_hit = np.argmax(hits) + 1
-            mrr_list.append(1.0 / first_hit)
-        else:
-            maps.append(0.0)
-            mrr_list.append(0.0)
-
-        denom = np.log2(np.arange(2, k + 2))
-        dcg = (hits / denom).sum()
-        m = min(true_items.size, k)
-        idcg = (1.0 / denom[:m]).sum()
-        ndcgs.append(dcg / idcg if idcg > 0 else 0.0)
-
-    n = len(precisions)
-    return {
-        f"precision@{k}": float(np.mean(precisions)) if n else 0.0,
-        f"recall@{k}": float(np.mean(recalls)) if n else 0.0,
-        f"map@{k}": float(np.mean(maps)) if n else 0.0,
-        f"ndcg@{k}": float(np.mean(ndcgs)) if n else 0.0,
-        f"hit_rate@{k}": float(np.mean(hits_list)) if n else 0.0,
-        f"mrr@{k}": float(np.mean(mrr_list)) if n else 0.0,
-        "n_eval_users": n,
-    }
+def sanitize_metrics(metrics: dict[str, float]) -> dict[str, float]:
+    return {sanitize_mlflow_metric_name(k): float(v) for k, v in metrics.items()}
 
 
 def build_popular_recs(train_user_items: csr_matrix, max_k: int) -> list:
@@ -161,7 +37,11 @@ def build_popular_recs(train_user_items: csr_matrix, max_k: int) -> list:
     return recs_by_user
 
 
-def build_random_recs(train_user_items: csr_matrix, max_k: int, seed: int = 42) -> list:
+def build_random_recs(
+    train_user_items: csr_matrix,
+    max_k: int,
+    seed: int = 42,
+) -> list:
     rng = np.random.default_rng(seed)
     n_users, n_items = train_user_items.shape
     all_items = np.arange(n_items, dtype=np.int64)
@@ -176,7 +56,48 @@ def build_random_recs(train_user_items: csr_matrix, max_k: int, seed: int = 42) 
     return recs_by_user
 
 
-def main():
+def load_model(model_path: str) -> Any:
+    with open(model_path, "rb") as f:
+        return pickle.load(f)
+
+
+def log_metrics_to_mlflow(params: dict, metrics: dict[str, float]) -> None:
+    """
+    Логируем метрики в MLflow:
+    - если есть run_id от train => логируем в него
+    - иначе => создаём новый run и логируем туда
+    """
+    mlflow.set_tracking_uri(params["mlflow"]["tracking_uri"])
+    mlflow.set_experiment(params["mlflow"]["experiment_name"])
+
+    sanitized = sanitize_metrics(metrics)
+    run_id_path = Path("models/mlflow_run_id.txt")
+
+    # UTF-8 на всякий случай для Windows-консоли
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
+
+    if run_id_path.exists():
+        run_id = run_id_path.read_text(encoding="utf-8").strip()
+        logger.info("Logging metrics to existing MLflow run_id=%s", run_id)
+        try:
+            with mlflow.start_run(run_id=run_id):
+                mlflow.log_metrics(sanitized)
+                mlflow.log_artifact("metrics.json")
+            return
+        except Exception as e:
+            logger.warning("Failed to log to existing run_id=%s: %s", run_id, e)
+
+    logger.warning("No valid MLflow run_id found, logging metrics to a new run")
+    with mlflow.start_run():
+        mlflow.log_metrics(sanitized)
+        mlflow.log_artifact("metrics.json")
+
+
+def main() -> None:
     params = load_params()
 
     model_path = params["model"]["model_path"]
@@ -186,75 +107,63 @@ def main():
     ks = params["metrics"]["ks"]
 
     logger.info("Loading model and matrices...")
-    with open(model_path, "rb") as f:
-        model = pickle.load(f)
+    model = load_model(model_path)
 
-    train_matrix = load_npz(train_matrix_path)
-    val_matrix = load_npz(val_matrix_path)
-    test_matrix = load_npz(test_matrix_path)
+    train_matrix = load_npz(train_matrix_path).tocsr()
+    val_matrix = load_npz(val_matrix_path).tocsr()
+    test_matrix = load_npz(test_matrix_path).tocsr()
 
     logger.info(
-        f"Shapes: train={train_matrix.shape}, "
-        f"val={val_matrix.shape}, test={test_matrix.shape}"
+        "Shapes: train=%s, val=%s, test=%s",
+        train_matrix.shape,
+        val_matrix.shape,
+        test_matrix.shape,
     )
 
-    MAX_K = max(ks)
-    popular_recs = build_popular_recs(train_matrix, max_k=MAX_K)
+    max_k = max(ks)
+    popular_recs = build_popular_recs(train_matrix, max_k=max_k)
     random_recs = build_random_recs(
-        train_matrix, max_k=MAX_K, seed=params["model"]["random_state"]
+        train_matrix,
+        max_k=max_k,
+        seed=int(params["model"]["random_state"]),
     )
 
-    all_metrics = {}
+    all_metrics: dict[str, float] = {}
 
     for k in ks:
-        logger.info(f"\n{'='*40}\nEvaluating K={k}")
+        logger.info("%s", "\n" + "=" * 40 + f"\nEvaluating K={k}")
 
         als_val = eval_at_k(model, train_matrix, val_matrix, k=k)
         als_test = eval_at_k(model, train_matrix, test_matrix, k=k)
+
         pop_val = eval_from_recs(val_matrix, popular_recs, k=k, name="popular")
         pop_test = eval_from_recs(test_matrix, popular_recs, k=k, name="popular")
+
         rnd_val = eval_from_recs(val_matrix, random_recs, k=k, name="random")
         rnd_test = eval_from_recs(test_matrix, random_recs, k=k, name="random")
 
-        logger.info(f"ALS   VAL  @{k}: {als_val}")
-        logger.info(f"ALS   TEST @{k}: {als_test}")
-        logger.info(f"POP   VAL  @{k}: {pop_val}")
-        logger.info(f"POP   TEST @{k}: {pop_test}")
-        logger.info(f"RAND  VAL  @{k}: {rnd_val}")
-        logger.info(f"RAND  TEST @{k}: {rnd_test}")
+        logger.info("ALS   VAL  @%d: %s", k, als_val)
+        logger.info("ALS   TEST @%d: %s", k, als_test)
+        logger.info("POP   VAL  @%d: %s", k, pop_val)
+        logger.info("POP   TEST @%d: %s", k, pop_test)
+        logger.info("RAND  VAL  @%d: %s", k, rnd_val)
+        logger.info("RAND  TEST @%d: %s", k, rnd_test)
 
         for metric_name, value in als_test.items():
-            all_metrics[f"als_test_{metric_name}"] = value
+            all_metrics[f"als_test_{metric_name}"] = float(value)
         for metric_name, value in als_val.items():
-            all_metrics[f"als_val_{metric_name}"] = value
+            all_metrics[f"als_val_{metric_name}"] = float(value)
+
         for metric_name, value in pop_test.items():
-            all_metrics[f"popular_test_{metric_name}"] = value
+            all_metrics[f"popular_test_{metric_name}"] = float(value)
         for metric_name, value in rnd_test.items():
-            all_metrics[f"random_test_{metric_name}"] = value
+            all_metrics[f"random_test_{metric_name}"] = float(value)
 
     save_metrics(all_metrics, "metrics.json")
-    mlflow.set_tracking_uri(params["mlflow"]["tracking_uri"])
-    mlflow.set_experiment(params["mlflow"]["experiment_name"])
-
-    sanitized_metrics = sanitize_metrics(all_metrics)
-
-    run_id_path = Path("models/mlflow_run_id.txt")
-
-    if run_id_path.exists():
-        run_id = run_id_path.read_text(encoding="utf-8").strip()
-        logger.info("Logging metrics to existing MLflow run_id=%s", run_id)
-
-        with mlflow.start_run(run_id=run_id):
-            mlflow.log_metrics(sanitized_metrics)
-            mlflow.log_artifact("metrics.json")
-    else:
-        logger.warning("No MLflow run_id found, logging metrics to a new run")
-
-        with mlflow.start_run():
-            mlflow.log_metrics(sanitized_metrics)
-            mlflow.log_artifact("metrics.json")
-
     logger.info("Metrics saved to metrics.json")
+
+    log_metrics_to_mlflow(params, all_metrics)
+    logger.info("Metrics logged to MLflow")
 
 
 if __name__ == "__main__":
