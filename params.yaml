@@ -31,8 +31,13 @@ metrics:
 mlflow:
   experiment_name: music-als-recommender
   model_name: music-als-recommender
-  tracking_uri: http://127.0.0.1:5000
+  tracking_uri: http://mlflow:5000
 
 monitoring:
   drift_threshold: 0.3
+  concept_drift_threshold_pct: 0.1
   reports_dir: reports/
+  check_interval_hours: 24
+  rolling_window_days: 45
+  confidence_interval: 0.95
+  min_history_days_for_ci: 7

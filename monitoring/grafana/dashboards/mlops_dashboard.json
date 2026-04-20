@@ -1,0 +1,108 @@
+{
+  "description": "MLOps Music Recommendation — March Drift Monitoring",
+  "editable": true,
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "orientation": "auto"},
+      "targets": [{"expr": "minutes_since_last_retrain", "legendFormat": "Minutes", "refId": "A"}],
+      "title": "⏱ Minutes Since Last Retrain",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"max": 1, "min": 0, "thresholds": {"steps": [{"color": "green", "value": 0}, {"color": "yellow", "value": 0.2}, {"color": "red", "value": 0.5}]}}},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}},
+      "targets": [{"expr": "drift_score{drift_type=\"data_drift\"}", "legendFormat": "Data Drift", "refId": "A"}],
+      "title": "📊 Data Drift Score",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {"defaults": {"max": 1, "min": 0, "thresholds": {"steps": [{"color": "green", "value": 0}, {"color": "red", "value": 0.5}]}}},
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}},
+      "targets": [{"expr": "drift_score{drift_type=\"concept_drift\"}", "legendFormat": "Concept Drift", "refId": "A"}],
+      "title": "🧠 Concept Drift Score",
+      "type": "gauge"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}},
+      "targets": [{"expr": "increase(alerts_total[24h])", "legendFormat": "{{alert_type}} ({{severity}})", "refId": "A"}],
+      "title": "🚨 Alerts (last 24h)",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "id": 5,
+      "targets": [
+        {"expr": "model_metric{metric_name=\"ndcg@10\", split=\"daily\"}", "legendFormat": "NDCG@10", "refId": "A"},
+        {"expr": "model_metric{metric_name=\"hit_rate@10\", split=\"daily\"}", "legendFormat": "HitRate@10", "refId": "B"},
+        {"expr": "model_metric{metric_name=\"mrr@10\", split=\"daily\"}", "legendFormat": "MRR@10", "refId": "C"}
+      ],
+      "title": "📈 Daily Model Metrics (March)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "id": 6,
+      "targets": [
+        {"expr": "drift_score{drift_type=\"data_drift\"}", "legendFormat": "Data Drift Score", "refId": "A"},
+        {"expr": "drift_score{drift_type=\"concept_drift\"}", "legendFormat": "Concept Drift Score", "refId": "B"},
+        {"expr": "drift_detected{drift_type=\"data_drift\"} * 0.5", "legendFormat": "Data Drift Detected", "refId": "C"}
+      ],
+      "title": "📉 Drift Scores Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+      "id": 7,
+      "targets": [
+        {"expr": "data_n_interactions_daily", "legendFormat": "Interactions", "refId": "A"},
+        {"expr": "data_n_unique_users_daily", "legendFormat": "Unique Users", "refId": "B"}
+      ],
+      "title": "📦 Daily Data Volume",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+      "id": 8,
+      "targets": [
+        {"expr": "rate(recommendations_total[5m])", "legendFormat": "Requests/sec", "refId": "A"},
+        {"expr": "histogram_quantile(0.95, rate(recommendations_latency_seconds_bucket[5m]))", "legendFormat": "p95 latency", "refId": "B"}
+      ],
+      "title": "🔍 API Performance",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 20},
+      "id": 9,
+      "targets": [
+        {"expr": "retraining_total{status=\"success\"}", "legendFormat": "Success", "refId": "A"},
+        {"expr": "retraining_total{status=\"failed\"}", "legendFormat": "Failed", "refId": "B"}
+      ],
+      "title": "🔄 Retraining History",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 38,
+  "tags": ["mlops", "drift", "monitoring"],
+  "time": {"from": "now-30d", "to": "now"},
+  "title": "MLOps Music Recommendation",
+  "uid": "mlops-music-001",
+  "version": 1
+}

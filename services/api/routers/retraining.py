@@ -1,4 +1,6 @@
+import shutil
 import subprocess
+import sys
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, BackgroundTasks, Depends
@@ -22,7 +24,6 @@ class RetrainingResponse(BaseModel):
 
 
 def run_retraining(job_id: int, db: Session, artifacts: ModelArtifacts):
-    """Запускает dvc repro в фоне и обновляет статус в бд"""
     job = db.query(RetrainingJob).filter(RetrainingJob.id == job_id).first()
     if not job:
         return
@@ -31,28 +32,44 @@ def run_retraining(job_id: int, db: Session, artifacts: ModelArtifacts):
         job.status = "running"
         db.commit()
 
-        logger.info(f"Starting retraining job {job_id}...")
-        result = subprocess.run(
-            ["dvc", "repro"],
-            capture_output=True,
-            text=True,
-            timeout=3600,
-        )
+        logger.info("Starting retraining job %s...", job_id)
 
-        if result.returncode == 0:
+        dvc_bin = shutil.which("dvc")
+
+        if dvc_bin:
+            cmd = [dvc_bin, "repro", "-f", "train", "-f", "evaluate"]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=3600)
+            ok = result.returncode == 0
+            stderr = result.stderr
+        else:
+            cmd_train = [sys.executable, "-X", "utf8", "-m", "src.models.train_model"]
+            cmd_eval = [sys.executable, "-X", "utf8", "-m", "src.models.evaluate_model"]
+
+            r1 = subprocess.run(cmd_train, capture_output=True, text=True, timeout=3600)
+            if r1.returncode != 0:
+                ok = False
+                stderr = r1.stderr
+            else:
+                r2 = subprocess.run(
+                    cmd_eval, capture_output=True, text=True, timeout=3600
+                )
+                ok = r2.returncode == 0
+                stderr = r2.stderr
+
+        if ok:
             job.status = "success"
             job.finished_at = datetime.now(timezone.utc)
             db.commit()
 
             params = load_params()
-            artifacts.reload(params)
-            logger.info(f"Retraining job {job_id} completed successfully")
+            artifacts.reload(params)  # перезагрузить модель в памяти API
+            logger.info("Retraining job %s completed successfully", job_id)
         else:
             job.status = "failed"
-            job.error_message = result.stderr[:1000]
+            job.error_message = (stderr or "")[:1000]
             job.finished_at = datetime.now(timezone.utc)
             db.commit()
-            logger.error(f"Retraining job {job_id} failed: {result.stderr}")
+            logger.error("Retraining job %s failed: %s", job_id, stderr)
 
     except subprocess.TimeoutExpired:
         job.status = "failed"
@@ -64,7 +81,7 @@ def run_retraining(job_id: int, db: Session, artifacts: ModelArtifacts):
         job.error_message = str(e)
         job.finished_at = datetime.now(timezone.utc)
         db.commit()
-        logger.error(f"Retraining job {job_id} exception: {e}")
+        logger.error("Retraining job %s exception: %s", job_id, e)
 
 
 @router.post("/", response_model=RetrainingResponse)
@@ -131,3 +148,31 @@ def get_retraining_history(
         }
         for j in jobs
     ]
+
+
+@router.post("/process-day")
+def process_march_day(
+    data_date: str,
+    day_parquet_path: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Ручной запуск обработки одного дня марта.
+    Используется для разработки и тестирования мониторинга.
+    data_date: например '2007-03-01'
+    day_parquet_path: например 'data/raw/march/march_01.parquet'
+    """
+    from src.monitoring.metrics_collector import PROMETHEUS_METRICS
+    from src.monitoring.scheduler import DailyMonitor
+
+    monitor = DailyMonitor(db_session=db, prometheus_metrics=PROMETHEUS_METRICS)
+    try:
+        summary = monitor.process_day(
+            data_date=data_date,
+            day_parquet_path=day_parquet_path,
+        )
+        return {"status": "ok", "summary": summary}
+    except Exception as e:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=500, detail=str(e))

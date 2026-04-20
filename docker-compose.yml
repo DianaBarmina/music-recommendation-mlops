@@ -43,17 +43,21 @@ services:
     environment:
       MLFLOW_BACKEND_STORE_URI: postgresql://mlops:mlops_password@postgres:5432/mlops_db
       MLFLOW_DEFAULT_ARTIFACT_ROOT: /mlflow/artifacts
+      MLFLOW_SERVER_ALLOWED_HOSTS: "mlflow:5000,mlflow,mlops-mlflow:5000,localhost:5000,127.0.0.1:5000"
     volumes:
       - mlflow-data:/mlflow/artifacts
     ports:
       - "5000:5000"
-    command: >
-      bash -c "pip install mlflow psycopg2-binary &&
-               mlflow server
-               --backend-store-uri postgresql://mlops:mlops_password@postgres:5432/mlops_db
-               --default-artifact-root /mlflow/artifacts
-               --host 0.0.0.0
-               --port 5000"
+    command:
+      - sh
+      - -lc
+      - |
+        pip install -q mlflow psycopg2-binary && \
+        exec mlflow server \
+          --backend-store-uri "$MLFLOW_BACKEND_STORE_URI" \
+          --default-artifact-root "$MLFLOW_DEFAULT_ARTIFACT_ROOT" \
+          --host 0.0.0.0 \
+          --port 5000
     healthcheck:
       test:
         [
@@ -82,7 +86,6 @@ services:
       MODEL_NAME: music-als-recommender
       MODEL_STAGE: Production
     volumes:
-      - model-data:/app/models
       - ./models:/app/models
       - ./data:/app/data
       - ./configs:/app/configs

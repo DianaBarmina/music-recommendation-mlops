@@ -15,8 +15,8 @@ stages:
       nfiles: 1
     - path: params.yaml
       hash: md5
-      md5: f86a0554ac16f86a31c562bcabb4dc03
-      size: 1081
+      md5: d592d418a0c9d4644fd04c2b9764969b
+      size: 1228
     - path: src/data/make_dataset.py
       hash: md5
       md5: d0d497893ca3aeb4e883c6c5c7d45d84
@@ -28,19 +28,19 @@ stages:
     outs:
     - path: data/interim/clean_interactions.parquet
       hash: md5
-      md5: 4d557f79b466e1896253a456836da588
-      size: 433114
+      md5: 99e8fa848e533e2ad02f3bff4ee103b9
+      size: 433021
   featurize:
     cmd: python -m src.data.build_features
     deps:
     - path: data/interim/clean_interactions.parquet
       hash: md5
-      md5: 4d557f79b466e1896253a456836da588
-      size: 433114
+      md5: 99e8fa848e533e2ad02f3bff4ee103b9
+      size: 433021
     - path: params.yaml
       hash: md5
-      md5: f86a0554ac16f86a31c562bcabb4dc03
-      size: 1081
+      md5: d592d418a0c9d4644fd04c2b9764969b
+      size: 1228
     - path: src/data/build_features.py
       hash: md5
       md5: 6d763600fc0e59be61a762e7215da44f
@@ -56,8 +56,8 @@ stages:
       size: 161657
     - path: data/processed/reference/reference_dataset.parquet
       hash: md5
-      md5: 3a646bd3a2a76035e4eaaacda599740b
-      size: 333782
+      md5: 477c074d37fa7179265792af0aceece0
+      size: 333650
     - path: data/processed/test_matrix.npz
       hash: md5
       md5: 629949fc2c4a22e8dc584272e30f67a9
@@ -83,12 +83,12 @@ stages:
       size: 148296
     - path: params.yaml
       hash: md5
-      md5: f86a0554ac16f86a31c562bcabb4dc03
-      size: 1081
+      md5: d592d418a0c9d4644fd04c2b9764969b
+      size: 1228
     - path: src/models/train_model.py
       hash: md5
-      md5: 55b9e865e61798e8b5b700f4eb79a036
-      size: 2847
+      md5: 2dd2edd849d79c825979a2d7990a93c2
+      size: 3058
     - path: src/utils/helpers.py
       hash: md5
       md5: bf8a0e2684870a49d12ac219cd55d060
@@ -127,12 +127,12 @@ stages:
       size: 1946132
     - path: params.yaml
       hash: md5
-      md5: f86a0554ac16f86a31c562bcabb4dc03
-      size: 1081
+      md5: d592d418a0c9d4644fd04c2b9764969b
+      size: 1228
     - path: src/models/evaluate_model.py
       hash: md5
-      md5: 9bcbeb4376edc685a1193dbadb24e994
-      size: 5880
+      md5: 64aab0b17da969086b9fa04519920c22
+      size: 6089
     - path: src/utils/helpers.py
       hash: md5
       md5: bf8a0e2684870a49d12ac219cd55d060
