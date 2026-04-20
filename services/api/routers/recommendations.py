@@ -1,4 +1,5 @@
 import json
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -10,6 +11,11 @@ from services.api.database import get_db
 from services.api.dependencies import ModelArtifacts, get_artifacts
 from services.api.models_db import Prediction
 from src.models.predict_model import get_recommendations, get_user_idx
+from src.monitoring.metrics_collector import (
+    ANOMALIES_TOTAL,
+    RECOMMENDATIONS_LATENCY,
+    RECOMMENDATIONS_TOTAL,
+)
 from src.utils.helpers import get_logger
 
 logger = get_logger(__name__)
@@ -45,6 +51,8 @@ def recommend(
     if not artifacts.is_ready:
         raise HTTPException(status_code=503, detail="Model is not ready")
 
+    start_time = time.time()
+
     user_idx = get_user_idx(user_id, artifacts.users_map)
     if user_idx is None:
         raise HTTPException(
@@ -77,6 +85,11 @@ def recommend(
     )
     db.add(prediction)
     db.commit()
+
+    RECOMMENDATIONS_TOTAL.labels(model_version=artifacts.model_version).inc()
+    RECOMMENDATIONS_LATENCY.observe(time.time() - start_time)
+    if is_anomaly:
+        ANOMALIES_TOTAL.labels(reason=anomaly_reason or "unknown").inc()
 
     return RecommendationResponse(
         user_id=user_id,

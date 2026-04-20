@@ -1,3 +1,4 @@
+import os
 import pickle
 import re
 import sys
@@ -67,8 +68,11 @@ def log_metrics_to_mlflow(params: dict, metrics: dict[str, float]) -> None:
     - если есть run_id от train => логируем в него
     - иначе => создаём новый run и логируем туда
     """
-    mlflow.set_tracking_uri(params["mlflow"]["tracking_uri"])
+    tracking_uri = os.getenv("MLFLOW_TRACKING_URI", params["mlflow"]["tracking_uri"])
+    mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(params["mlflow"]["experiment_name"])
+    # mlflow.set_tracking_uri(params["mlflow"]["tracking_uri"])
+    # mlflow.set_experiment(params["mlflow"]["experiment_name"])
 
     sanitized = sanitize_metrics(metrics)
     run_id_path = Path("models/mlflow_run_id.txt")

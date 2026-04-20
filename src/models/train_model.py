@@ -1,3 +1,4 @@
+import os
 import pickle
 from pathlib import Path
 
@@ -37,8 +38,12 @@ def save_model(model, path: str) -> None:
 def main():
     params = load_params()
 
-    mlflow.set_tracking_uri(params["mlflow"]["tracking_uri"])
+    tracking_uri = os.getenv("MLFLOW_TRACKING_URI", params["mlflow"]["tracking_uri"])
+    mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(params["mlflow"]["experiment_name"])
+
+    # mlflow.set_tracking_uri(params["mlflow"]["tracking_uri"])
+    # mlflow.set_experiment(params["mlflow"]["experiment_name"])
 
     with mlflow.start_run() as run:
         mlflow.log_params(
