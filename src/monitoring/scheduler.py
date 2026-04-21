@@ -1,6 +1,7 @@
 import json
 import os
 import pickle
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -26,10 +27,22 @@ from src.utils.helpers import get_logger, load_params
 logger = get_logger(__name__)
 
 
+_ALLOWED = re.compile(r"[^0-9a-zA-Z_\-./ ]+")
+
+
+def _sanitize(name: str) -> str:
+    name = name.replace("@", "_at_")
+    return _ALLOWED.sub("_", name)
+
+
+def _sanitize_metrics(d: dict) -> dict:
+    return {_sanitize(k): float(v) for k, v in d.items() if isinstance(v, (int, float))}
+
+
 class DailyMonitor:
     """
-    Запускается раз в день (или при добавлении нового дня марта).
-    Инкапсулирует всю логику мониторинга одного дня.
+    Запускается при добавлении нового дня марта
+    Инкапсулирует всю логику мониторинга одного дня
     """
 
     def __init__(self, db_session, prometheus_metrics: dict):
@@ -176,6 +189,18 @@ class DailyMonitor:
             mlflow.set_tag("run_type", "daily_monitoring")
 
             mlflow.log_metrics(
+                _sanitize_metrics({f"data_{k}": v for k, v in stats.items()})
+            )
+
+            if daily_metrics:
+                mlflow.log_metrics(
+                    _sanitize_metrics(
+                        {f"daily_{k}": v for k, v in daily_metrics.items()}
+                    )
+                )
+
+            """
+            mlflow.log_metrics(
                 {
                     f"data_{k}": float(v)
                     for k, v in stats.items()
@@ -191,6 +216,7 @@ class DailyMonitor:
                         if isinstance(v, (int, float))
                     }
                 )
+            """
 
             for dr in drift_results:
                 prefix = dr.get("drift_type", "drift")
