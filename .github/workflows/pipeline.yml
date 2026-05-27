@@ -120,19 +120,17 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile
-          target: api
+          file: services/api/Dockerfile
           push: false
           tags: music-recommendation-api:ci-test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build UI image (target=ui)
+      - name: Build UI image (check only, no push)
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile
-          target: ui
+          file: services/ui/Dockerfile
           push: false
           tags: music-recommendation-ui:ci-test
           cache-from: type=gha
@@ -168,9 +166,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile
+          file: services/api/Dockerfile
           push: true
-          target: api
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/music-recommendation-api:latest
             ${{ secrets.DOCKER_USERNAME }}/music-recommendation-api:${{ steps.sha.outputs.short_sha }}
@@ -181,9 +178,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile
+          file: services/ui/Dockerfile
           push: true
-          target: ui
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/music-recommendation-ui:latest
             ${{ secrets.DOCKER_USERNAME }}/music-recommendation-ui:${{ steps.sha.outputs.short_sha }}
