@@ -71,8 +71,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: api
+      dockerfile: services/api/Dockerfile
     container_name: mlops-api
     networks:
       - mlops-network
@@ -107,8 +106,7 @@ services:
   ui:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: ui
+      dockerfile: services/ui/Dockerfile
     container_name: mlops-ui
     networks:
       - mlops-network
