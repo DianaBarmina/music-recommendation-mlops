@@ -1,7 +1,0 @@
-users:
-  - username: admin
-    # пароль: admin123
-    # хеш генерируется командой: python -c "from passlib.hash import bcrypt; print(bcrypt.hash('admin123'))"
-    hashed_password: "$2b$12$XuXCrCnpateyqOn84BnPR.qteiv3RBrnGuwNS9XF4qvWEEwdaDJay"
-    role: admin
-    full_name: "Administrator"
