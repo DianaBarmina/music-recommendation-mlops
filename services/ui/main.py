@@ -6,6 +6,8 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 
+from services.ui.auth import require_auth, show_user_info
+
 # API_URL = "http://localhost:8000"
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
@@ -14,6 +16,11 @@ st.set_page_config(
     page_icon="🎵",
     layout="wide",
 )
+
+if not require_auth():
+    st.stop()
+
+show_user_info()
 
 
 def api_get(endpoint: str, params: dict | None = None) -> dict | list | None:
@@ -121,6 +128,10 @@ elif page == "📋 Predictions":
 
     if predictions:
         df = pd.DataFrame(predictions)
+
+        df["n_recommendations"] = df["recommendations"].apply(
+            lambda x: len(x) if isinstance(x, list) else 0
+        )
 
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("Total shown", len(df))
