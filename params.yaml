@@ -1,6 +1,7 @@
 data:
   january_path: data/raw/january/interactions_january.parquet
   february_path: data/raw/february/interactions_february.parquet
+  raw_march_dir: data/raw/march/
   interim_path: data/interim/clean_interactions.parquet
   train_matrix_path: data/processed/train_matrix.npz
   val_matrix_path: data/processed/val_matrix.npz
@@ -9,6 +10,7 @@ data:
   item_mapping_path: data/processed/items_map.parquet
   reference_path: data/processed/reference/reference_dataset.parquet
   predictions_log_path: data/predictions/predictions_log.parquet
+  retrain_window_path: data/interim/retrain_window.parquet
 
 split:
   test_window_days: 14

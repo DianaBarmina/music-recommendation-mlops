@@ -117,3 +117,13 @@ def resolve_alert(alert_id: int, db: Session = Depends(get_db)):
     alert.is_resolved = True
     db.commit()
     return {"status": "resolved", "alert_id": alert_id}
+
+
+@router.get("/last-processed-date")
+def get_last_processed_date(db: Session = Depends(get_db)):
+    from services.api.models_db import DailyStats
+
+    last = db.query(DailyStats).order_by(DailyStats.data_date.desc()).first()
+    if not last:
+        return {"last_date": None}
+    return {"last_date": last.data_date}

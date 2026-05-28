@@ -258,10 +258,25 @@ elif page == "🚨 Drift & Monitoring":
     with col1:
         if st.button("🚀 Trigger Retraining", type="primary"):
             with st.spinner("Triggering retraining..."):
-                result = api_post("/retrain/", params={"triggered_by": "manual_ui"})
+                last_date_resp = api_get("/drift/last-processed-date")
+                last_date = last_date_resp.get("last_date") if last_date_resp else None
+
+                # Передаём current_date если есть обработанные дни марта
+                params_retrain = {"triggered_by": "manual_ui"}
+                if last_date:
+                    params_retrain["current_date"] = last_date
+
+                result = api_post("/retrain/", params=params_retrain)
+
             if result:
                 st.success(f"✅ Retraining started! Job ID: {result['job_id']}")
                 st.info(result["message"])
+                if last_date:
+                    st.info(f"📅 Rolling window up to: {last_date}")
+                else:
+                    st.warning(
+                        "⚠️ No march data processed yet — retraining on jan+feb only"
+                    )
 
     with col2:
         retrain_status = api_get("/retrain/status/latest")
