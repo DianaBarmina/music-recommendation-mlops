@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui
+  namespace: music-rec
+  labels:
+    app: ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ui
+  template:
+    metadata:
+      labels:
+        app: ui
+    spec:
+      containers:
+        - name: ui
+          image: dianabarmina/music-recommendation-ui:latest
+          ports:
+            - containerPort: 8501
+          env:
+            - name: API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: mlops-config
+                  key: API_URL
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: mlops-secrets
+                  key: SECRET_KEY
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "250m"
+          livenessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: 8501
+            initialDelaySeconds: 30
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui-service
+  namespace: music-rec
+spec:
+  selector:
+    app: ui
+  ports:
+    - port: 8501
+      targetPort: 8501
+  type: ClusterIP

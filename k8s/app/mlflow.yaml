@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mlflow-pvc
+  namespace: music-rec
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow
+  namespace: music-rec
+  labels:
+    app: mlflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      initContainers:
+        # Ждём пока postgres будет готов
+        - name: wait-for-postgres
+          image: busybox:1.35
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z postgres-service 5432; do
+                echo "Waiting for postgres..."
+                sleep 2
+              done
+      containers:
+        - name: mlflow
+          image: python:3.12-slim
+          ports:
+            - containerPort: 5000
+          command:
+            - bash
+            - -c
+            - |
+              pip install --quiet mlflow psycopg2-binary &&
+              mlflow server \
+                --backend-store-uri postgresql://mlops:mlops_password@postgres-service:5432/mlops_db \
+                --default-artifact-root /mlflow/artifacts \
+                --host 0.0.0.0 \
+                --port 5000
+          volumeMounts:
+            - name: mlflow-data
+              mountPath: /mlflow/artifacts
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+      volumes:
+        - name: mlflow-data
+          persistentVolumeClaim:
+            claimName: mlflow-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-service
+  namespace: music-rec
+spec:
+  selector:
+    app: mlflow
+  ports:
+    - port: 5000
+      targetPort: 5000
+  type: ClusterIP

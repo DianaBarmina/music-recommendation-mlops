@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mlops-config
+  namespace: music-rec
+data:
+  MLFLOW_TRACKING_URI: "http://mlflow-service:5000"
+  MODEL_NAME: "music-als-recommender"
+  MODEL_STAGE: "Production"
+  API_URL: "http://api-service:8000"

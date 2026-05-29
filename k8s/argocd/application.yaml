@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: music-recommendation
+  namespace: argocd
+  # Finalizer гарантирует что при удалении Application
+  # Argo CD удалит все созданные ресурсы из кластера
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    # ← Заменить на ваш реальный URL репозитория
+    repoURL: https://github.com/DianaBarmina/music-recommendation-mlops.git
+    targetRevision: main
+    # Папка с манифестами которую отслеживает Argo CD
+    path: k8s/app
+
+  destination:
+    # Деплоим в тот же кластер где работает Argo CD
+    server: https://kubernetes.default.svc
+    namespace: music-rec
+
+  syncPolicy:
+    # Создать namespace если не существует
+    syncOptions:
+      - CreateNamespace=true
+    automated:
+      # Автоматически применять изменения из Git
+      prune: true      # удалять ресурсы которых нет в Git
+      selfHeal: true   # восстанавливать если кто-то изменил вручную в кластере
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
