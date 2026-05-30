@@ -28,7 +28,6 @@ spec:
         app: mlflow
     spec:
       initContainers:
-        # Ждём пока postgres будет готов
         - name: wait-for-postgres
           image: busybox:1.35
           command:
@@ -41,19 +40,9 @@ spec:
               done
       containers:
         - name: mlflow
-          image: python:3.12-slim
+          image: diashabarmina/music-recommendation-mlflow:latest
           ports:
             - containerPort: 5000
-          command:
-            - bash
-            - -c
-            - |
-              pip install --quiet mlflow psycopg2-binary &&
-              mlflow server \
-                --backend-store-uri postgresql://mlops:mlops_password@postgres-service:5432/mlops_db \
-                --default-artifact-root /mlflow/artifacts \
-                --host 0.0.0.0 \
-                --port 5000
           volumeMounts:
             - name: mlflow-data
               mountPath: /mlflow/artifacts
