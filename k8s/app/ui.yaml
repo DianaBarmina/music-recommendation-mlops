@@ -44,6 +44,15 @@ spec:
               port: 8501
             initialDelaySeconds: 30
             periodSeconds: 15
+          volumeMounts:
+            - name: ui-users-config
+              mountPath: /app/services/ui/users.yaml
+              subPath: users.yaml
+              readOnly: true
+      volumes:
+        - name: ui-users-config
+          secret:
+            secretName: ui-users
 ---
 apiVersion: v1
 kind: Service

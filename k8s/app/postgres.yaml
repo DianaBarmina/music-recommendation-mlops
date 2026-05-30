@@ -51,7 +51,7 @@ spec:
               cpu: "250m"
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "mlops"]
+              command: ["pg_isready", "-U", "mlops", "-d", "mlops_db"]
             initialDelaySeconds: 10
             periodSeconds: 5
       volumes:
