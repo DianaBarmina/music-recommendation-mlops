@@ -1,4 +1,6 @@
 [core]
-    remote = localremote
+    remote = dagshub
 ['remote "localremote"']
     url = C:/dvc-storage
+['remote "dagshub"']
+    url = https://dagshub.com/DianaBarmina/music-recommendation-mlops.dvc
