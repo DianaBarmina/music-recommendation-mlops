@@ -50,6 +50,53 @@ spec:
                 echo "Waiting for postgres..."
                 sleep 2
               done
+
+        - name: pull-artifacts
+          image: python:3.12-slim
+          command:
+            - sh
+            - -c
+            - |
+              pip install dvc[http] --quiet
+
+              git clone https://github.com/DianaBarmina/music-recommendation-mlops.git /tmp/repo
+              cd /tmp/repo
+
+              dvc remote modify dagshub auth basic
+              dvc remote modify dagshub user $DAGSHUB_USERNAME
+              dvc remote modify dagshub password $DAGSHUB_TOKEN
+
+
+              dvc pull models/als_model.pkl
+              dvc pull data/processed/users_map.parquet
+              dvc pull data/processed/items_map.parquet
+              dvc pull data/processed/reference/reference_dataset.parquet
+
+              cp models/als_model.pkl /app/models/als_model.pkl
+              mkdir -p /app/data/processed/reference
+              cp data/processed/users_map.parquet /app/data/processed/users_map.parquet
+              cp data/processed/items_map.parquet /app/data/processed/items_map.parquet
+              cp data/processed/reference/reference_dataset.parquet \
+                   /app/data/processed/reference/reference_dataset.parquet
+
+              echo "All artifacts pulled successfully"
+          env:
+            - name: DAGSHUB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: dvc-credentials
+                  key: DAGSHUB_USERNAME
+            - name: DAGSHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: dvc-credentials
+                  key: DAGSHUB_TOKEN
+          volumeMounts:
+            - name: model-data
+              mountPath: /app/models
+            - name: app-data
+              mountPath: /app/data
+
       containers:
         - name: api
           image: diashabarmina/music-recommendation-api:latest
