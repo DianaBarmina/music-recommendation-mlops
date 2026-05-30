@@ -57,7 +57,9 @@ spec:
             - sh
             - -c
             - |
-              pip install dvc[http] --quiet
+              apt-get update -qq && apt-get install -y git --no-install-recommends
+
+              pip install dvc --quiet
 
               git clone https://github.com/DianaBarmina/music-recommendation-mlops.git /tmp/repo
               cd /tmp/repo
@@ -70,12 +72,14 @@ spec:
               dvc pull models/als_model.pkl
               dvc pull data/processed/users_map.parquet
               dvc pull data/processed/items_map.parquet
+              dvc pull data/processed/train_matrix.npz
               dvc pull data/processed/reference/reference_dataset.parquet
 
               cp models/als_model.pkl /app/models/als_model.pkl
               mkdir -p /app/data/processed/reference
               cp data/processed/users_map.parquet /app/data/processed/users_map.parquet
               cp data/processed/items_map.parquet /app/data/processed/items_map.parquet
+              cp data/processed/train_matrix.npz /app/data/processed/train_matrix.npz
               cp data/processed/reference/reference_dataset.parquet \
                    /app/data/processed/reference/reference_dataset.parquet
 
