@@ -52,7 +52,7 @@ spec:
               done
       containers:
         - name: api
-          image: dianabarmina/music-recommendation-api:latest
+          image: diashabarmina/music-recommendation-api:latest
           ports:
             - containerPort: 8000
           envFrom:
