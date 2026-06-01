@@ -27,6 +27,7 @@ EXPOSE 5000
 CMD ["mlflow", "server", \
      "--backend-store-uri", "postgresql://mlops:mlops_password@postgres-service:5432/mlops_db", \
      "--default-artifact-root", "/mlflow/artifacts", \
+     "--serve-artifacts", \
      "--host", "0.0.0.0", \
      "--port", "5000", \
-     "--allowed-hosts", "mlflow-service,mlflow-service.music-rec.svc.cluster.local,localhost,127.0.0.1"]
+     "--allowed-hosts", "mlflow-service,mlflow-service:5000,mlflow-service.music-rec.svc.cluster.local,mlflow-service.music-rec.svc.cluster.local:5000,localhost,127.0.0.1"]
