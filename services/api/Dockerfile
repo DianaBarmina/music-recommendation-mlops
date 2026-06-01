@@ -37,6 +37,7 @@ COPY src/ ./src/
 COPY services/api/ ./services/api/
 COPY configs/ ./configs/
 COPY params.yaml .
+COPY metrics.json .
 
 RUN mkdir -p \
         data/raw \
