@@ -87,6 +87,8 @@ spec:
               cp data/processed/reference/reference_dataset.parquet \
                    /app/data/processed/reference/reference_dataset.parquet
 
+              rm -rf /app/data/raw/march/march
+
               mkdir -p /app/data/raw/march
               mkdir -p /app/data/raw/january
               mkdir -p /app/data/raw/february
