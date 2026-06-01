@@ -87,10 +87,20 @@ spec:
               cp data/processed/reference/reference_dataset.parquet \
                    /app/data/processed/reference/reference_dataset.parquet
 
-              mkdir -p /app/data/raw
-              cp -r data/raw/march /app/data/raw/march
-              cp -r data/raw/january /app/data/raw/january
-              cp -r data/raw/february /app/data/raw/february
+              mkdir -p /app/data/raw/march
+              mkdir -p /app/data/raw/january
+              mkdir -p /app/data/raw/february
+              cp data/raw/march/*.parquet /app/data/raw/march/
+              cp data/raw/january/*.parquet /app/data/raw/january/
+              cp data/raw/february/*.parquet /app/data/raw/february/
+
+              mkdir -p /app/data/interim
+              mkdir -p /app/data/predictions
+              mkdir -p /app/reports
+
+              chmod -R 777 /app/data/
+              chmod -R 777 /app/models/
+              chmod -R 777 /app/reports/
 
               echo "All artifacts pulled successfully"
           env:
