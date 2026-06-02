@@ -119,7 +119,7 @@ Last.fm Dataset 1K users
 ---
 
 
-```markdown
+
 ## Быстрый старт
 
 ### Требования
